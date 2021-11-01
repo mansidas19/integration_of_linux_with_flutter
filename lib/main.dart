@@ -11,20 +11,15 @@ var webdata,cmd;
 class MyApp extends StatelessWidget {
  var fsconnect=FirebaseFirestore.instance;
 
- myget() async{
-   var d=await fsconnect.collection("command output").get();
-   for(var i in d.docs){
-     print(i.data());
-   }
- }
  mycmd(mycmd) async {
-  var url="http://192.168.1.10/cgi-bin/web.py?x=${mycmd}";
+  var url="http://192.168.99.104/cgi-bin/web.py?x=${mycmd}";
   var r = await http.get(url);
   webdata = r.body;
   print(webdata);
 }
   @override
   Widget build(BuildContext context) {
+    var fs = FirebaseFirestore.instance;
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
@@ -80,13 +75,29 @@ class MyApp extends StatelessWidget {
                   print('send..');
                 },
               ),
-              RaisedButton(
-                color: Colors.redAccent,
-                child: Text('GET DATA'),
-                onPressed: (){
-                  myget();
-                  print('get..');
+              StreamBuilder<QuerySnapshot>(
+                builder: (context, snapshot) {
+                  print('new data comes');
+
+                  var msg = snapshot.data.docs;
+
+                  List<Widget> y = [];
+                  for (var d in msg) {
+                    var msgText = d.data()['command'];
+                    var msgWidget = Text("$msgText");
+
+                    y.add(msgWidget);
+                  }
+
+                  print(y);
+
+                  return Container(
+                    child: Column(
+                      children: y,
+                    ),
+                  );
                 },
+                stream: fs.collection("command output").snapshots(),
               ),
             ],
           ),
